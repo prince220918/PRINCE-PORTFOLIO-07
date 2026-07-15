@@ -31,7 +31,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploads"
+# Writable directory configuration to prevent read-only filesystem crash on Vercel
+if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+    UPLOAD_DIR = "/tmp/uploads"
+else:
+    UPLOAD_DIR = "uploads"
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Supabase Client Setup (for production file uploads)
