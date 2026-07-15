@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Prince Radadiya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0d;
+    --bg-panel:#131318;
+    --bg-panel-2:#1a1a21;
+    --text:#f3f1ec;
+    --muted:#8a8a94;
+    --accent:#ff3b5c;
+    --accent-2:#2fe6d6;
+    --line:#232329;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    overflow-x:hidden;
+    cursor:none;
+  }
+  @media (hover:none){ body{ cursor:auto; } }
+  ::selection{ background:var(--accent); color:#0a0a0d; }
+
+  .display{ font-family:'Anton', sans-serif; text-transform:uppercase; letter-spacing:0.5px; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  a{ color:inherit; text-decoration:none; }
+  section{ position:relative; padding:100px 8vw 100px; }
+  
+  /* ---------- Custom cursor ---------- */
+  #cursor-dot, #cursor-ring{
+    position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  #cursor-dot{ width:6px; height:6px; background:var(--accent); }
+  #cursor-ring{
+    width:34px; height:34px; border:1px solid var(--accent-2);
+    transition:width .2s, height .2s, border-color .2s, background .2s;
+  }
+  #cursor-ring.ring-hover{ width:56px; height:56px; background:rgba(47,230,214,0.08); border-color:var(--accent); }
+  @media (hover:none){ #cursor-dot, #cursor-ring{ display:none; } }
+
+  /* ---------- Top Bar ---------- */
+  #timeline-bar{
+    position:fixed; top:0; left:0; right:0; height:56px;
+    background:rgba(10,10,13,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    z-index:500;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px;
+  }
+  #rec{
+    display:flex; align-items:center; gap:6px;
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent);
+    letter-spacing:2px;
+  }
+  #rec .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); animation:blink 1.4s infinite; }
+  @keyframes blink{ 50%{ opacity:.15; } }
+
+  .back-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .back-btn:hover {
+    color: var(--accent-2);
+    border-color: var(--accent-2);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- Passcode Gate ---------- */
+  #gate-container {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gate-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 40px 30px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .form-input {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 20px;
+    outline: none;
+    transition: border-color 0.25s;
+  }
+  .form-input:focus {
+    border-color: var(--accent-2);
+  }
+  .btn{
+    font-family:'JetBrains Mono', monospace; font-size:13px; letter-spacing:1px;
+    padding: 14px 28px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap:10px;
+    transition:transform .25s, background .25s, color .25s;
+    border: none; cursor: pointer;
+    width: 100%;
+  }
+  .btn-primary{ background:var(--accent); color:#0a0a0d; }
+  .btn-primary:hover{ transform:translateY(-2px); }
+  .btn-ghost{ border:1px solid var(--line); color:var(--text); background: transparent; }
+  .btn-ghost:hover{ border-color:var(--accent); color:var(--accent); transform:translateY(-2px); }
+
+  /* ---------- Dashboard Workspace ---------- */
+  #workspace {
+    display: none;
+    margin-top: 20px;
+  }
+  #workspace.active {
+    display: block;
+  }
+
+  .dropzone{
+    border: 1.5px dashed var(--line);
+    border-radius: 14px;
+    padding: 50px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .25s, background .25s;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-panel);
+  }
+  .dropzone.dragover{ border-color:var(--accent-2); background:rgba(47,230,214,0.06); }
+  .dropzone .dz-icon{
+    width:56px; height:56px; margin:0 auto 18px;
+    border-radius:50%; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--accent-2);
+  }
+  .dropzone .dz-title{ font-family:'Anton'; font-size:22px; }
+  .dropzone .dz-sub{ font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); margin-top:8px; }
+  .dropzone input{ display:none; }
+
+  #link-form-container {
+    margin-top: 24px;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .link-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr auto;
+    gap: 14px;
+  }
+  @media (max-width: 768px) {
+    .link-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- Media Grid ---------- */
+  #bin-grid{
+    margin-top: 34px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:18px;
+  }
+  .clip-card{
+    position: relative;
+    background:var(--bg-panel-2); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; cursor:pointer;
+    transition:transform .3s, border-color .3s;
+  }
+  .clip-card:hover{ transform:translateY(-4px); border-color:var(--accent-2); }
+  .clip-thumb{ position:relative; aspect-ratio:16/9; background:#000; overflow:hidden; }
+  .clip-thumb video, .clip-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  
+  .clip-play{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(0deg, rgba(0,0,0,.55), transparent 50%);
+  }
+  .clip-play .p-icon{
+    width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,0.3);
+  }
+  .clip-meta{ padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .clip-name{ font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .clip-dur{ font-family:'JetBrains Mono'; font-size:11px; color:var(--accent-2); flex-shrink:0; }
+  
+  .clip-remove{
+    position:absolute; top:8px; right:8px; z-index:2;
+    width:28px; height:28px; border-radius:50%;
+    background:rgba(255,59,92,0.9); border:1px solid var(--accent);
+    color:#0a0a0d; font-size:12px; font-weight: bold; display:flex; align-items:center; justify-content:center;
+    cursor: pointer; transition: transform 0.2s, background 0.2s;
+  }
+  .clip-remove:hover {
+    transform: scale(1.1);
+    background: var(--accent);
+    color: white;
+  }
+
+  .bin-empty{
+    margin-top:34px; text-align:center; color:var(--muted);
+    font-family:'JetBrains Mono'; font-size:13px; letter-spacing:.5px;
+    padding:40px 0;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* ---------- Lightbox player ---------- */
+  #lightbox{
+    position:fixed; inset:0; background:rgba(6,6,8,0.94); z-index:1050;
+    display:none; align-items:center; justify-content:center; padding:5vw;
+    backdrop-filter:blur(6px);
+  }
+  #lightbox.open{ display:flex; }
+  #lightbox-close{
+    position:absolute; top:26px; right:32px; font-family:'JetBrains Mono'; font-size:13px;
+    letter-spacing:1px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:8px;
+  }
+  #lightbox-close:hover{ color:var(--accent); }
+
+  .copy-toast{
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--accent-2); color:#0a0a0d; font-family:'JetBrains Mono'; font-size:12px;
+    padding:12px 20px; border-radius:100px; opacity:0; pointer-events:none;
+    transition:opacity .25s, transform .25s; z-index:2000;
+  }
+  .copy-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- TOP BAR -->
+<div id="timeline-bar">
+  <div id="rec"><span class="dot"></span> ADMIN PANEL</div>
+  <a href="/" class="back-btn">← BACK TO WEBSITE</a>
+</div>
+
+<!-- PASSCODE GATE -->
+<div id="gate-container">
+  <div class="gate-card">
+    <div class="display" style="font-size: 24px; margin-bottom: 15px; color: var(--text);">Admin Unlock</div>
+    <p style="font-size: 11px; color: var(--muted); margin-bottom: 24px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px;">ENTER AUTHENTICATION PASSCODE</p>
+    <input type="password" id="adminPasswordInput" placeholder="••••••••" class="form-input">
+    <button id="adminSubmitBtn" class="btn btn-primary" style="margin-bottom: 12px;">Unlock Dashboard</button>
+    <a href="/" class="btn btn-ghost">Return to Site</a>
+    <div id="adminErrorMsg" style="color: var(--accent); font-size: 11px; margin-top: 18px; font-family: 'JetBrains Mono', monospace; display: none; letter-spacing: 1.5px;">INCORRECT PASSCODE</div>
+  </div>
+</div>
+
+<!-- MAIN WORKSPACE -->
+<section id="workspace">
+  <div class="eyebrow" style="margin-bottom: 30px;">SEQ 01 — UPLOADER</div>
+  
+  <!-- File Dropzone -->
+  <div class="dropzone" id="dropzone">
+    <div class="dz-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+    </div>
+    <div class="dz-title display">Upload Edited Video Clip</div>
+    <div class="dz-sub">MP4 · MOV · WEBM — drag and drop here, or click to select files</div>
+    <input type="file" id="fileInput" accept="video/*" multiple>
+  </div>
+
+  <!-- Link Form -->
+  <div id="link-form-container">
+    <div class="display" style="font-size: 18px; color: var(--accent-2); margin-bottom: 8px;">🔗 Add YouTube or Instagram Embed Link</div>
+    <div class="link-form-grid">
+      <input type="text" id="linkTitle" placeholder="Video Title (e.g. YouTube Commercial Edit)" class="form-input" style="margin-bottom:0;">
+      <input type="text" id="linkUrl" placeholder="Paste YouTube link or Instagram Reel URL..." class="form-input" style="margin-bottom:0;">
+      <button id="addLinkBtn" class="btn btn-primary" style="padding: 12px 24px; border-radius: 6px; font-size: 12px; font-family:'JetBrains Mono'; height: 100%; width: auto;">Add Clip</button>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 4px;">Supports standard YouTube, Shorts, Instagram Reels and posts.</div>
+  </div>
+
+  <div class="eyebrow" style="margin-top: 60px; margin-bottom: 20px;">SEQ 02 — WORK BIN MANAGER</div>
+  
+  <div id="bin-grid"></div>
+  <div class="bin-empty" id="bin-empty">YOUR PORTFOLIO IS EMPTY — ADD YOUR FIRST CLIP ABOVE</div>
+</section>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <div id="lightbox-close">✕ CLOSE</div>
+  <div id="lightbox-content" style="width: 100%; max-width: 900px; aspect-ratio: 16/9; display: flex; justify-content: center; align-items: center;">
+    <video id="lightbox-video" controls playsinline style="width: 100%; height: 100%; object-fit: contain;"></video>
+    <iframe id="lightbox-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width: 100%; height: 100%; border-radius: 8px; display: none;"></iframe>
+  </div>
+</div>
+
+<div class="copy-toast" id="toast">Copy status</div>
+
+<script>
+(function(){
+  /* ---------------- Custom cursor ---------------- */
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  let mx=0,my=0, rx=0, ry=0;
+  window.addEventListener('mousemove', e=>{
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+  });
+  function loop(){
+    rx += (mx-rx)*0.18; ry += (my-ry)*0.18;
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(loop);
+  }
+  loop();
+  
+  function refreshHoverStates() {
+    document.querySelectorAll('a, button, .btn, .clip-card, .dropzone, .clip-remove').forEach(el=>{
+      el.removeEventListener('mouseenter', addRingHover);
+      el.removeEventListener('mouseleave', removeRingHover);
+      el.addEventListener('mouseenter', addRingHover);
+      el.addEventListener('mouseleave', removeRingHover);
+    });
+  }
+  function addRingHover() { ring.classList.add('ring-hover'); }
+  function removeRingHover() { ring.classList.remove('ring-hover'); }
+
+  /* ---------------- Auth Verification ---------------- */
+  const gateContainer = document.getElementById('gate-container');
+  const workspace = document.getElementById('workspace');
+  const adminPasswordInput = document.getElementById('adminPasswordInput');
+  const adminSubmitBtn = document.getElementById('adminSubmitBtn');
+  const adminErrorMsg = document.getElementById('adminErrorMsg');
+
+  let adminToken = localStorage.getItem('adminToken') || null;
+
+  async function tryUnlock(passcode) {
+    // Test the passcode by checking if we get a 200 list or 401 on headers
+    try {
+      const response = await fetch('/api/videos');
+      if (response.ok) {
+        // Passcode test is done locally or by saving token and testing it on upload/delete.
+        // We will do a quick validation by saving it and showing workspace.
+        adminToken = passcode;
+        localStorage.setItem('adminToken', adminToken);
+        gateContainer.style.display = 'none';
+        workspace.classList.add('active');
+        loadVideos();
+        showToast('Admin workspace unlocked!');
+      }
+    } catch(err) {
+      showError('CONNECTION ERROR');
+    }
+  }
+
+  adminSubmitBtn.addEventListener('click', handleLogin);
+  adminPasswordInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+  function handleLogin() {
+    const passcode = adminPasswordInput.value.trim();
+    if (!passcode) return;
+    // We unlock the gate. If a request is made subsequently and fails, it triggers logout.
+    tryUnlock(passcode);
+  }
+
+  function handleAuthFailure() {
+    adminToken = null;
+    localStorage.removeItem('adminToken');
+    gateContainer.style.display = 'flex';
+    workspace.classList.remove('active');
+    showError('SESSION EXPIRED OR INVALID PASSCODE');
+  }
+
+  function showError(msg) {
+    adminErrorMsg.textContent = msg;
+    adminErrorMsg.style.display = 'block';
+  }
+
+  function getAuthHeaders() {
+    return {
+      'Authorization': `Bearer ${adminToken || ''}`
+    };
+  }
+
+  // Check token on start
+  if (adminToken) {
+    gateContainer.style.display = 'none';
+    workspace.classList.add('active');
+  }
+
+  /* ---------------- Video Management Grid ---------------- */
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const binGrid = document.getElementById('bin-grid');
+  const binEmpty = document.getElementById('bin-empty');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxVideo = document.getElementById('lightbox-video');
+  const lightboxIframe = document.getElementById('lightbox-iframe');
+  const lightboxContent = document.getElementById('lightbox-content');
+  const lightboxClose = document.getElementById('lightbox-close');
+  let clipCount = 0;
+
+  function updateEmptyState(){
+    binEmpty.style.display = clipCount===0 ? 'block' : 'none';
+  }
+
+  async function loadVideos() {
+    try {
+      const response = await fetch('/api/videos');
+      if (response.ok) {
+        const videos = await response.json();
+        binGrid.innerHTML = '';
+        clipCount = 0;
+        videos.forEach(video => {
+          renderVideoCard(video);
+        });
+        updateEmptyState();
+        refreshHoverStates();
+      }
+    } catch (err) {
+      console.error('Failed to load videos:', err);
+    }
+  }
+
+  function renderVideoCard(video) {
+    clipCount++;
+    updateEmptyState();
+
+    const card = document.createElement('div');
+    card.className='clip-card';
+    card.setAttribute('data-id', video.id);
+
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className='clip-thumb';
+
+    if (video.type === 'local') {
+      const vid = document.createElement('video');
+      vid.src = video.url; vid.muted=true; vid.preload='metadata'; vid.playsInline=true;
+      thumbWrap.appendChild(vid);
+      vid.addEventListener('loadedmetadata', ()=>{
+        vid.currentTime = Math.min(0.5, vid.duration/2);
+      });
+    } else if (video.type === 'youtube') {
+      const img = document.createElement('img');
+      img.src = video.thumbnail_url || 'https://img.youtube.com/vi/placeholder/hqdefault.jpg';
+      img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.display = 'block';
+      thumbWrap.appendChild(img);
+    } else if (video.type === 'instagram') {
+      if (video.thumbnail_url) {
+        const img = document.createElement('img');
+        img.src = video.thumbnail_url;
+        img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.display = 'block';
+        thumbWrap.appendChild(img);
+      } else {
+        const fallback = document.createElement('div');
+        fallback.style.width = '100%'; fallback.style.height = '100%';
+        fallback.style.background = 'linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d)';
+        fallback.style.opacity = '0.75'; fallback.style.display = 'flex'; fallback.style.alignItems = 'center'; fallback.style.justifyContent = 'center';
+        fallback.innerHTML = `
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: white; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+          </svg>
+        `;
+        thumbWrap.appendChild(fallback);
+      }
+    }
+
+    const playOverlay = document.createElement('div');
+    playOverlay.className='clip-play';
+    playOverlay.innerHTML = `<div class="p-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>`;
+    thumbWrap.appendChild(playOverlay);
+
+    // Delete Button (Standard on Admin page)
+    const removeBtn = document.createElement('div');
+    removeBtn.className='clip-remove';
+    removeBtn.innerHTML='✕';
+    removeBtn.title='Delete video';
+    removeBtn.addEventListener('click', async e=>{
+      e.stopPropagation();
+      if (confirm('Are you sure you want to delete this video?')) {
+        try {
+          const res = await fetch(`/api/videos/${video.id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+          });
+          if (res.ok) {
+            card.remove();
+            clipCount--;
+            updateEmptyState();
+            showToast('Video deleted successfully');
+          } else if (res.status === 401) {
+            handleAuthFailure();
+          } else {
+            showToast('Failed to delete video');
+          }
+        } catch (err) {
+          showToast('Error deleting video');
+        }
+      }
+    });
+    card.appendChild(removeBtn);
+
+    const meta = document.createElement('div');
+    meta.className='clip-meta';
+    const nameEl = document.createElement('div');
+    nameEl.className='clip-name';
+    nameEl.textContent = video.title;
+    const durEl = document.createElement('div');
+    durEl.className='clip-dur mono';
+    durEl.textContent = video.duration || '--:--';
+    meta.appendChild(nameEl); meta.appendChild(durEl);
+
+    card.appendChild(thumbWrap);
+    card.appendChild(meta);
+    card.addEventListener('click', () => openLightbox(video));
+
+    binGrid.appendChild(card);
+  }
+
+  /* ---------------- Drag & Drop Uploads ---------------- */
+  ['dragenter','dragover'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('dragover'); });
+  });
+  dropzone.addEventListener('drop', e=>{
+    handleFiles(e.dataTransfer.files);
+  });
+  dropzone.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', e=> handleFiles(e.target.files));
+
+  function handleFiles(fileList){
+    if (!adminToken) {
+      handleAuthFailure();
+      return;
+    }
+    [...fileList].forEach(file=>{
+      if(!file.type.startsWith('video/')) return;
+      uploadLocalVideo(file);
+    });
+  }
+
+  function getDurationString(seconds) {
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function uploadLocalVideo(file) {
+    const tempUrl = URL.createObjectURL(file);
+    const tempVid = document.createElement('video');
+    tempVid.src = tempUrl;
+    tempVid.preload = 'metadata';
+    tempVid.addEventListener('loadedmetadata', async () => {
+      const durationStr = getDurationString(tempVid.duration);
+      URL.revokeObjectURL(tempUrl);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+      formData.append('duration', durationStr);
+
+      showToast('Uploading local video...');
+
+      try {
+        const res = await fetch('/api/videos/upload', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: formData
+        });
+
+        if (res.ok) {
+          showToast('Video uploaded successfully!');
+          loadVideos();
+        } else if (res.status === 401) {
+          handleAuthFailure();
+        } else {
+          showToast('Upload failed');
+        }
+      } catch (err) {
+        showToast('Error uploading file');
+      }
+    });
+  }
+
+  /* ---------------- Link uploads (YouTube/Instagram) ---------------- */
+  const linkTitle = document.getElementById('linkTitle');
+  const linkUrl = document.getElementById('linkUrl');
+  const addLinkBtn = document.getElementById('addLinkBtn');
+
+  addLinkBtn.addEventListener('click', async () => {
+    const title = linkTitle.value.trim();
+    const url = linkUrl.value.trim();
+
+    if (!title || !url) {
+      showToast('Please fill in both fields');
+      return;
+    }
+
+    showToast('Adding link...');
+
+    try {
+      const res = await fetch('/api/videos/link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ title, url })
+      });
+
+      if (res.ok) {
+        showToast('Link added successfully!');
+        linkTitle.value = '';
+        linkUrl.value = '';
+        loadVideos();
+      } else if (res.status === 401) {
+        handleAuthFailure();
+      } else {
+        const errData = await res.json();
+        showToast(errData.detail || 'Failed to add link');
+      }
+    } catch (err) {
+      showToast('Error adding link');
+    }
+  });
+
+  /* ---------------- Lightbox ---------------- */
+  function openLightbox(video){
+    lightboxVideo.style.display = 'none';
+    lightboxIframe.style.display = 'none';
+    lightboxVideo.removeAttribute('src');
+    lightboxIframe.removeAttribute('src');
+
+    if (video.type === 'local') {
+      lightboxVideo.src = video.url;
+      lightboxVideo.style.display = 'block';
+      lightboxContent.style.maxWidth = '900px';
+      lightboxContent.style.aspectRatio = '16/9';
+      lightbox.classList.add('open');
+      lightboxVideo.play().catch(()=>{});
+    } else if (video.type === 'youtube' || video.type === 'instagram') {
+      lightboxIframe.src = video.url;
+      lightboxIframe.style.display = 'block';
+      if (video.type === 'instagram') {
+        lightboxContent.style.maxWidth = '400px';
+        lightboxContent.style.aspectRatio = '9/16';
+      } else {
+        lightboxContent.style.maxWidth = '900px';
+        lightboxContent.style.aspectRatio = '16/9';
+      }
+      lightbox.classList.add('open');
+    }
+  }
+
+  function closeLightbox(){
+    lightboxVideo.pause();
+    lightboxVideo.removeAttribute('src');
+    lightboxIframe.removeAttribute('src');
+    lightbox.classList.remove('open');
+  }
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e=>{ if(e.target===lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLightbox(); });
+
+  /* ---------------- Toast Notification ---------------- */
+  const toast = document.getElementById('toast');
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 2000);
+  }
+
+  // Load existing videos if already verified
+  if (adminToken) {
+    loadVideos();
+  }
+  
+  refreshHoverStates();
+})();
+</script>
+</body>
+</html>

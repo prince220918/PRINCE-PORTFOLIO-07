@@ -1,0 +1,26 @@
+{
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "main.py"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "main.py"
+    },
+    {
+      "src": "/prince",
+      "dest": "main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "portfolio.html"
+    }
+  ]
+}
