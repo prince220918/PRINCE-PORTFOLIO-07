@@ -222,11 +222,11 @@ def delete_video(
 # Serve uploads directory (statically serve local clips if running locally)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# Serve portfolio.html at root route
+# Serve index.html at root route
 @app.get("/")
 def read_root():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    return FileResponse(os.path.join(base_dir, "portfolio.html"))
+    return FileResponse(os.path.join(base_dir, "index.html"))
 
 # Serve admin.html at /prince route
 @app.get("/prince")
