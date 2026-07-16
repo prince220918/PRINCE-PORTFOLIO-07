@@ -567,10 +567,20 @@
       handleAuthFailure();
       return;
     }
+    let hasInvalidFile = false;
     [...fileList].forEach(file=>{
-      if(!file.type.startsWith('video/')) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      const isVideo = file.type.startsWith('video/') || 
+                      ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext);
+      if(!isVideo) {
+        hasInvalidFile = true;
+        return;
+      }
       uploadLocalVideo(file);
     });
+    if (hasInvalidFile) {
+      showToast('Some files were ignored. Only video files (MP4, MOV, etc.) are allowed.');
+    }
   }
 
   function getDurationString(seconds) {
