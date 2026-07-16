@@ -362,7 +362,7 @@
   const adminSubmitBtn = document.getElementById('adminSubmitBtn');
   const adminErrorMsg = document.getElementById('adminErrorMsg');
 
-  let adminToken = localStorage.getItem('adminToken') || null;
+  let adminToken = null;
 
   async function tryUnlock(passcode) {
     try {
@@ -374,7 +374,6 @@
       });
       if (response.ok) {
         adminToken = passcode;
-        localStorage.setItem('adminToken', adminToken);
         gateContainer.style.display = 'none';
         workspace.classList.add('active');
         loadVideos();
@@ -398,7 +397,6 @@
 
   function handleAuthFailure(showRedirect = true) {
     adminToken = null;
-    localStorage.removeItem('adminToken');
     gateContainer.style.display = 'flex';
     workspace.classList.remove('active');
     showError('SESSION EXPIRED OR INVALID PASSCODE');
@@ -417,31 +415,6 @@
     return {
       'Authorization': `Bearer ${adminToken || ''}`
     };
-  }
-
-  // Check token on start
-  if (adminToken) {
-    verifySavedToken(adminToken);
-  }
-
-  async function verifySavedToken(passcode) {
-    try {
-      const response = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${passcode}`
-        }
-      });
-      if (response.ok) {
-        gateContainer.style.display = 'none';
-        workspace.classList.add('active');
-        loadVideos();
-      } else {
-        handleAuthFailure(false);
-      }
-    } catch(err) {
-      showError('CONNECTION ERROR');
-    }
   }
 
   /* ---------------- Video Management Grid ---------------- */
