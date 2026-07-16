@@ -225,9 +225,11 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # Serve portfolio.html at root route
 @app.get("/")
 def read_root():
-    return FileResponse("portfolio.html")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return FileResponse(os.path.join(base_dir, "portfolio.html"))
 
 # Serve admin.html at /prince route
 @app.get("/prince")
 def read_admin():
-    return FileResponse("admin.html")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return FileResponse(os.path.join(base_dir, "admin.html"))
