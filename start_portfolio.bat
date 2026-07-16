@@ -15,7 +15,7 @@ if %errorlevel% equ 0 (
 )
 
 echo Starting ngrok Tunnel in a new window...
-start cmd /k "title ngrok Tunnel && "C:\Users\01\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe" http 127.0.0.1:8000"
+start cmd /k "title ngrok Tunnel && C:\Users\01\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe http 127.0.0.1:8000"
 
 echo.
 echo ===================================================
