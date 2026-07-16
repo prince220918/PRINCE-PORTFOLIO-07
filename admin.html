@@ -365,18 +365,22 @@
   let adminToken = localStorage.getItem('adminToken') || null;
 
   async function tryUnlock(passcode) {
-    // Test the passcode by checking if we get a 200 list or 401 on headers
     try {
-      const response = await fetch('/api/videos');
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${passcode}`
+        }
+      });
       if (response.ok) {
-        // Passcode test is done locally or by saving token and testing it on upload/delete.
-        // We will do a quick validation by saving it and showing workspace.
         adminToken = passcode;
         localStorage.setItem('adminToken', adminToken);
         gateContainer.style.display = 'none';
         workspace.classList.add('active');
         loadVideos();
         showToast('Admin workspace unlocked!');
+      } else {
+        showError('INVALID PASSCODE');
       }
     } catch(err) {
       showError('CONNECTION ERROR');
@@ -389,16 +393,19 @@
   function handleLogin() {
     const passcode = adminPasswordInput.value.trim();
     if (!passcode) return;
-    // We unlock the gate. If a request is made subsequently and fails, it triggers logout.
     tryUnlock(passcode);
   }
 
-  function handleAuthFailure() {
+  function handleAuthFailure(showRedirect = true) {
     adminToken = null;
     localStorage.removeItem('adminToken');
     gateContainer.style.display = 'flex';
     workspace.classList.remove('active');
     showError('SESSION EXPIRED OR INVALID PASSCODE');
+    if (showRedirect) {
+      alert('Access Denied: Invalid admin passcode. Redirecting to home...');
+      window.location.href = '/';
+    }
   }
 
   function showError(msg) {
@@ -414,8 +421,27 @@
 
   // Check token on start
   if (adminToken) {
-    gateContainer.style.display = 'none';
-    workspace.classList.add('active');
+    verifySavedToken(adminToken);
+  }
+
+  async function verifySavedToken(passcode) {
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${passcode}`
+        }
+      });
+      if (response.ok) {
+        gateContainer.style.display = 'none';
+        workspace.classList.add('active');
+        loadVideos();
+      } else {
+        handleAuthFailure(false);
+      }
+    } catch(err) {
+      showError('CONNECTION ERROR');
+    }
   }
 
   /* ---------------- Video Management Grid ---------------- */

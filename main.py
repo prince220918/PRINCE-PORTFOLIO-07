@@ -66,6 +66,10 @@ def verify_admin(authorization: Optional[str] = Header(None)):
         )
     return True
 
+@app.post("/api/admin/verify")
+def verify_admin_pass(admin: bool = Depends(verify_admin)):
+    return {"detail": "authenticated"}
+
 # Helper functions to extract IDs
 def extract_youtube_id(url: str) -> Optional[str]:
     pattern = r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/ ]{11})'
